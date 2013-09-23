@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+ <head>
+    <meta charset="utf-8">
+    <title>Symmetric Cryptography</title>
+    <link href='http://fonts.googleapis.com/css?family=Russo+One' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" href="{{ url_for('static', filename='app.css' ) }}">
+</head>
+<body>
+	<div class="container">
+		<header class="row-fluid">
+			<h1 class="span12">Polybius</h1>
+		</header>
+
+		<section class="row-fluid">
+			<div class="span6">
+				<form action="{{ url_for('main') }}" method=post class="">
+					<label for="plain-text"><h3>Text :</h3></label>
+					<textarea id="plain-text" type="plain-text" name="plain-text" class="span12" autofocus=autofocus rows=6></textarea>
+					<button data-action="cipher" type="submit" class="btn btn-success">Cipher !</button>
+					<button data-action="decipher" type="submit" class="btn btn-inverse">Decipher !</button>
+				</form>
+			</div>
+			<div class="span6">
+				{% if session.text %}
+					<h3>Text : </h3>
+					<p>{{ session.text }}</p>
+				{% endif %}
+				<h3 data-title="encrypted-title">Polybiosed Text :</h3>
+				<p id="result-text" class="">{{ result }}</p>
+			</div>
+		</section>
+
+		<section id="matrix" class="row-fluid">
+			<table id="letter-matrix" class="span3 table">
+				<caption><button data-type="letter" id="letter-matrix-btn" class="btn 
+					{% if session.matrix_selected == 'letter' %}{{ "active" }}{% endif %}
+				">Select</button></caption>
+				<thead>
+					<tr>
+					</tr>
+				</thead>
+				<tbody>
+				</tbody>
+			</table>
+			<table id="number-matrix" class="span3 table">
+				<caption><button data-type="number" id="number-matrix-btn" class="btn
+					{% if session.matrix_selected == 'number' %}{{ "active" }}{% endif %}">Select</button></caption>
+				<thead>
+					<tr>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+					</tr>
+				</tbody>
+			</table>
+		</section>
+	</div>
+	<script src="{{ url_for('static', filename='jquery.min.js' ) }}"></script>
+	<script>
+	jQuery(function($) {
+		var row0 		= ["",  "A", "B", "C", "D", "E"];
+		var row1 		= ["A", "A", "B", "C", "D", "E"];
+		var row2 		= ["B", "F", "G", "H", "IJ", "K"];
+		var row3 		= ["C", "L", "M", "N", "O", "P"];
+		var row4 		= ["D", "Q", "R", "S", "T", "U"];
+		var row5 		= ["E", "V", "W", "X", "Y", "Z"];
+		var tbody 	= [row0, row1, row2, row3, row4, row5];
+
+		var numrow0 		= ["",  "1", "2", "3", "4", "5"];
+		var numrow1 		= ["1", "A", "B", "C", "D", "E"];
+		var numrow2 		= ["2", "F", "G", "H", "IJ", "K"];
+		var numrow3 		= ["3", "L", "M", "N", "O", "P"];
+		var numrow4 		= ["4", "Q", "R", "S", "T", "U"];
+		var numrow5		  = ["5", "V", "W", "X", "Y", "Z"];
+		var numtbody 	= [numrow0, numrow1, numrow2, numrow3, numrow4, numrow5];
+
+		var th = $("<th></th>", {
+		});
+
+		var td = $("<td></td>", {
+		});
+
+		var $number_matrix = $("#number-matrix");
+		var $number_matrix_thead_tr = $number_matrix.find("thead > tr");
+		var $number_matrix_tbody = $number_matrix.find("tbody");
+
+		for (var i = 0; i < numrow0.length; i++) {
+	  	$number_matrix_thead_tr.append(th.text(numrow0[i]).clone());
+		};
+
+		for (var i = 1; i < numtbody.length; i++) {
+			$number_matrix_tbody.append("<tr></tr>")
+			for (var j = 0; j < numtbody[i].length; j++) {
+				var _td = td.clone().text(numtbody[i][j])
+				$number_matrix_tbody.find("tr:nth-last-of-type(1)").append(_td);
+			};
+		};
+
+		var $letter_matrix = $("#letter-matrix");
+		var $letter_matrix_thead_tr = $letter_matrix.find("thead > tr");
+		var $letter_matrix_tbody = $letter_matrix.find("tbody");
+		
+		for (var i = 0; i < row0.length; i++) {
+	  	$letter_matrix_thead_tr.append(th.text(row0[i]).clone());
+		};
+
+		for (var i = 1; i < tbody.length; i++) {
+			$letter_matrix_tbody.append("<tr></tr>")
+			for (var j = 0; j < tbody[i].length; j++) {
+				var _td = td.clone().text(tbody[i][j])
+				$letter_matrix_tbody.find("tr:nth-last-of-type(1)").append(_td);
+			};
+		};
+
+		var $encrypted_text = $("#result-text");
+		$encrypted_text.hide();
+		if ( $encrypted_text.text() != "None" ) {
+			$encrypted_text.slideDown("slow");
+		}
+
+		$letter_matrix_btn = $("#letter-matrix-btn"); 
+		$number_matrix_btn = $("#number-matrix-btn");
+
+		$letter_matrix_btn.on("click", function(){
+			if ( $(this).hasClass("active") ){ }
+			else { $(this).addClass("active"); $number_matrix_btn.removeClass("active"); }
+		});
+
+		$number_matrix_btn.on("click", function(){
+			if ( $(this).hasClass("active") ){ }
+			else { $(this).addClass("active"); $letter_matrix_btn.removeClass("active"); }
+		});
+
+		$("form").on("submit", function(){
+			var _value = $letter_matrix_btn.hasClass("active") ? $letter_matrix_btn.data("type") : $number_matrix_btn.data("type")
+			var matrix = $("<input></input>", {
+				name: "matrix",
+				type: "hidden",
+				value: _value
+			});
+			$(this).append(matrix);
+		});
+
+		$("form > button").on("click" , function(){
+			_value = $(this).data("action");
+			var action = $("<input></input>", {
+				name: "action",
+				type: "hidden",
+				value: _value
+			});
+			$("form").append(action);
+		});
+	});
+	</script>
+</body>
+</html>
